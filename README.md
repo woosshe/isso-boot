@@ -1,2 +1,0 @@
-# isso-boot
-IWI SSO
