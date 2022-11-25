@@ -3,7 +3,7 @@
 
 <mapper namespace="kr.co.iwi.isso.app.auth.mapper.AuthMapper">
 
-	<select id="selectUserList" resultType="User">
+	<select id="selectUserInfo" resultType="User">
 		SELECT
 			USER_SEQ,
 			EMAIL,
@@ -18,16 +18,54 @@
 			ENTRY_YMD,
 			QUIT_YMD,
 			POSI_CD,
+			FN_GET_POSI_NM(POSI_CD) AS POSI_NM,
 			DUTY_CD,
+			FN_GET_DUTY_NM(DUTY_CD) AS DUTY_NM,
 			DEPT_CD,
+			FN_GET_DEPT_NM(DEPT_CD) AS DEPT_NM,
 			USE_YN,
 			DEL_YN,
 			REF_TOKEN,
 			REF_ISSUE_DT,
 			LAST_LOGIN_DT,
-			LAST_LOGIN_IP
+			LAST_LOGIN_IP,
+			LOGIN_FAIL_CNT
 		FROM
 			TB_USER
+		WHERE
+			UPPER(EMAIL) = UPPER(#{email})
+	</select>
+
+	<update id="updateUserLoginFail" parameterType="User">
+		UPDATE
+			TB_USER
+		SET
+			LOGIN_FAIL_CNT = LOGIN_FAIL_CNT + 1
+		WHERE
+			USER_SEQ = #{userSeq}
+	</update>
+
+	<update id="updateUserSignin" parameterType="User">
+		UPDATE
+			TB_USER
+		SET
+			REF_TOKEN = #{refToken},
+			REF_ISSUE_DT = SYSDATE,
+			LAST_LOGIN_DT = SYSDATE,
+			LAST_LOGIN_IP = #{lastLoginIp},
+			LOGIN_FAIL_CNT = 0
+		WHERE
+			USER_SEQ = #{userSeq}
+	</update>
+
+	<select id="selectUserInfoByToken" resultType="User">
+		SELECT
+			USER_SEQ,
+			EMAIL
+		FROM
+			TB_USER
+		WHERE
+			REF_TOKEN = #{refToken}
 	</select>
 
 </mapper>
