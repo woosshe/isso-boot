@@ -21,9 +21,6 @@ import kr.co.iwi.isso.common.Const;
 
 public class TokenUtil {
 
-	@Autowired
-	private HttpServletRequest request;
-
 	// 엑세스 토큰 생성
 	public static String createAccessToken(String subject) {
 		if (StringUtils.isEmpty(subject)) {
@@ -101,8 +98,8 @@ public class TokenUtil {
 
 	public static Cookie makeCookie(String name, String value, long min) {
 		Cookie cookie = new Cookie(name, value);
-		// cookie.setMaxAge(Long.valueOf(min * 60).intValue());
-		cookie.setMaxAge(Long.valueOf(60 * 60 * 24 * 365).intValue());
+		cookie.setMaxAge(Long.valueOf(min * 60).intValue());
+		// cookie.setMaxAge(Long.valueOf(60 * 60 * 24 * 365).intValue());
 		cookie.setDomain(Const.IWI_DOMAIN);
 		cookie.setPath("/");
 		cookie.setHttpOnly(true);
