@@ -2,12 +2,13 @@ package kr.co.iwi.isso.util;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.Enumeration;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -20,6 +21,16 @@ import io.jsonwebtoken.security.Keys;
 import kr.co.iwi.isso.common.Const;
 
 public class TokenUtil {
+
+	// 엑세스 토큰 생성
+	public static String createAccessToken(Object object) {
+		String subject = String.valueOf(object);
+		if (StringUtils.isEmpty(subject)) {
+			return null;
+		}
+
+		return createAccessToken(subject);
+	}
 
 	// 엑세스 토큰 생성
 	public static String createAccessToken(String subject) {
@@ -90,6 +101,35 @@ public class TokenUtil {
 	public static Boolean validate(String token, String subject) {
 		final String tokenSubject = getSubject(token);
 		return (subject.equals(tokenSubject) && !isExpired(token));
+	}
+
+	public static String extract(HttpServletRequest request) {
+		Enumeration<String> headers = request.getHeaders("Authorization");
+		while (headers.hasMoreElements()) {
+			String value = headers.nextElement();
+			extract(value, "Bearer");
+		}
+		return Strings.EMPTY;
+	}
+
+	public static String extract(String value) {
+		return extract(value, "Bearer");
+	}
+
+	public static String extract(HttpServletRequest request, String type) {
+		Enumeration<String> headers = request.getHeaders("Authorization");
+		while (headers.hasMoreElements()) {
+			String value = headers.nextElement();
+			extract(value, type);
+		}
+		return Strings.EMPTY;
+	}
+
+	public static String extract(String value, String type) {
+		if (value.toLowerCase().startsWith(type.toLowerCase())) {
+			return value.substring(type.length()).trim();
+		}
+		return Strings.EMPTY;
 	}
 
 	public static Cookie makeCookie(String name, String value) {

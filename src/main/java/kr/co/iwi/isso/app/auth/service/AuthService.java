@@ -24,8 +24,8 @@ public class AuthService {
 		return authMapper.updateUserSignin(req);
 	}
 
-	public User getUserInfoByToken(String refToken) throws Exception {
-		return authMapper.selectUserInfoByToken(refToken);
+	public User getUserInfoByToken(String refToken, String refIssueIp) throws Exception {
+		return authMapper.selectUserInfoByToken(refToken, refIssueIp);
 	}
 
 }

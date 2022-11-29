@@ -7,12 +7,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ValidResponse {
+public class TokenResponse {
 
 	@NotBlank
 	private String acsToken;
 
-	public ValidResponse(String acsToken) {
+	public TokenResponse(String acsToken) {
 		this.acsToken = acsToken;
 	}
 

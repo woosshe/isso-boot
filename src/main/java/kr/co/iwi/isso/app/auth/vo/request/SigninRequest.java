@@ -15,11 +15,4 @@ public class SigninRequest {
 	@NotBlank
 	private String password;
 
-	public SigninRequest() {
-	}
-
-	public SigninRequest(String email) {
-		this.email = email;
-	}
-
 }

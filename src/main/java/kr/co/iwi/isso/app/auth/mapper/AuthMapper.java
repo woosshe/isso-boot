@@ -14,6 +14,7 @@ public interface AuthMapper {
 
 	public int updateUserSignin(User req) throws Exception;
 
-	public User selectUserInfoByToken(@Param("refToken") String refToken) throws Exception;
+	public User selectUserInfoByToken(@Param("refToken") String refToken, @Param("refIssueIp") String refIssueIp)
+			throws Exception;
 
 }

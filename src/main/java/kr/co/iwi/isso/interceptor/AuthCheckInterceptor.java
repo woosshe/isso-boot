@@ -1,6 +1,8 @@
 package kr.co.iwi.isso.interceptor;
 
-import javax.servlet.http.Cookie;
+import java.util.Date;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -14,6 +16,7 @@ import kr.co.iwi.isso.app.auth.vo.model.User;
 import kr.co.iwi.isso.common.Const;
 import kr.co.iwi.isso.exception.TokenExpiredException;
 import kr.co.iwi.isso.exception.UnauthorizedException;
+import kr.co.iwi.isso.util.RequestUtil;
 import kr.co.iwi.isso.util.TokenUtil;
 
 public class AuthCheckInterceptor implements HandlerInterceptor {
@@ -31,84 +34,67 @@ public class AuthCheckInterceptor implements HandlerInterceptor {
 	}
 
 	private void userAuthCheck(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-		request.removeAttribute(Const.COOKIE_NAME_ACS);
-		request.removeAttribute(Const.COOKIE_NAME_REF);
+		Date now = new Date();
+		System.out.println(now.toString() + "  /  " + request.getRequestURI());
 
 		String acsToken = null;
 		String refToken = null;
 
-		Cookie[] cookies = request.getCookies();
-		if (cookies == null) {
+		String authorization = request.getHeader("Authorization");
+		if (StringUtils.isEmpty(authorization)) {
 			throw new UnauthorizedException();
 		}
 
-		for (Cookie cookie : cookies) {
-			if (Const.COOKIE_NAME_ACS.equals(cookie.getName())) {
-				acsToken = cookie.getValue();
-			} else if (Const.COOKIE_NAME_REF.equals(cookie.getName())) {
-				refToken = cookie.getValue();
-			}
-		}
+		Map<String, Object> body = RequestUtil.getBodyMap(request);
 
-		// System.out.println("===== autchCheck =========================");
-		// System.out.println(acsToken);
-		// System.out.println(refToken);
-		// System.out.println("==========================================");
-
-		boolean isEmptyAcsToken = StringUtils.isEmpty(acsToken);
-		boolean isEmptyRefToken = StringUtils.isEmpty(refToken);
-
-		if (isEmptyAcsToken && isEmptyRefToken) {
-			throw new UnauthorizedException();
-		}
-
-		boolean isExpiredAcsToken = true;
-		boolean isExpiredRefToken = true;
-
-		if (!isEmptyAcsToken) {
-			isExpiredAcsToken = TokenUtil.isExpired(acsToken);
-		}
-
-		if (!isEmptyRefToken) {
-			isExpiredRefToken = TokenUtil.isExpired(refToken);
-		}
-
-		if (isExpiredAcsToken && isExpiredRefToken) {
-			throw new TokenExpiredException();
+		if (Const.GRANT_TYPE_REF.equals(body.get("grant_type"))) {
+			refToken = TokenUtil.extract(authorization);
+		} else {
+			acsToken = TokenUtil.extract(authorization);
 		}
 
 		String email = null;
-		if (isExpiredAcsToken) {
-			// 엑세스 토큰 만료, 리프레시 토큰 검증
 
-			if (isEmptyRefToken || isExpiredRefToken) {
-				// 리프레시 토큰 누락 or 만료
+		if (StringUtils.isNotEmpty(acsToken)) {
+
+			// 엑세스 토큰 만료 체크
+			if (TokenUtil.isExpired(acsToken)) {
+				System.out.println("엑세스 토큰 만료");
 				throw new TokenExpiredException();
 			}
 
-			User user = authService.getUserInfoByToken(refToken);
-			if (user == null) {
-				// 리프레시 토큰 검증 실패
+			// 엑세스 토큰 email 추출
+			email = TokenUtil.getSubject(acsToken);
+			if (StringUtils.isEmpty(email)) {
 				throw new UnauthorizedException();
 			}
 
+		} else if (StringUtils.isNotEmpty(refToken)) {
+
+			// 리프레시 토큰 만료 체크
+			if (TokenUtil.isExpired(refToken)) {
+				System.out.println("리프레시 토큰 만료");
+				throw new TokenExpiredException();
+			}
+
+			// 리프레시 토큰 사용자 검증
+			User user = authService.getUserInfoByToken(refToken, RequestUtil.getRemoteIp(request));
+			if (user == null) {
+				throw new UnauthorizedException();
+			}
+
+			// 사용자 email 추출
 			email = user.getEmail();
+			if (StringUtils.isEmpty(email)) {
+				throw new UnauthorizedException();
+			}
+
 		} else {
-			// 엑세스 토큰 갱신
-
-			email = TokenUtil.getSubject(acsToken);
-		}
-
-		if (StringUtils.isEmpty(email)) {
+			// 인증실패
 			throw new UnauthorizedException();
 		}
 
-		acsToken = TokenUtil.createAccessToken(email);
-		response.addCookie(TokenUtil.makeCookie(Const.COOKIE_NAME_ACS, acsToken));
-
-		request.setAttribute(Const.COOKIE_NAME_ACS, acsToken);
-		request.setAttribute(Const.COOKIE_NAME_REF, refToken);
+		request.setAttribute(Const.TOKEN_EMAIL, email);
 	}
 
 	@Override

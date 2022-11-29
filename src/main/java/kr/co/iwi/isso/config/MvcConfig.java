@@ -21,6 +21,7 @@ import com.navercorp.lucy.security.xss.servletfilter.XssEscapeServletFilter;
 
 import kr.co.iwi.isso.common.Const;
 import kr.co.iwi.isso.interceptor.AuthCheckInterceptor;
+import kr.co.iwi.isso.interceptor.CommonInterceptor;
 
 @Configuration
 @EnableWebMvc
@@ -28,12 +29,18 @@ public class MvcConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addInterceptor(commonInterceptor()).addPathPatterns("/**");
 		registry.addInterceptor(authCheckInterceptor()).addPathPatterns("/**").excludePathPatterns("/auth/signin");
 	}
 
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
-		registry.addMapping("/**").allowCredentials(true).allowedOrigins(Const.IWI_DOMAINS);
+		registry.addMapping("/**").allowedOrigins(Const.IWI_DOMAINS);
+	}
+
+	@Bean
+	public CommonInterceptor commonInterceptor() {
+		return new CommonInterceptor();
 	}
 
 	@Bean

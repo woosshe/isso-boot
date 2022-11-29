@@ -51,6 +51,7 @@
 		SET
 			REF_TOKEN = #{refToken},
 			REF_ISSUE_DT = SYSDATE,
+			REF_ISSUE_IP = #{refIssueIp},
 			LAST_LOGIN_DT = SYSDATE,
 			LAST_LOGIN_IP = #{lastLoginIp},
 			LOGIN_FAIL_CNT = 0
@@ -66,6 +67,7 @@
 			TB_USER
 		WHERE
 			REF_TOKEN = #{refToken}
+			AND REF_ISSUE_IP = #{refIssueIp}
 	</select>
 
 </mapper>

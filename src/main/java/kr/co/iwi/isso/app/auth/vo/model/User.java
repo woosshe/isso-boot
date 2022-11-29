@@ -42,6 +42,9 @@ public class User {
 	@JsonIgnore
 	private Date refIssueDt;
 
+	@JsonIgnore
+	private String refIssueIp;
+
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
 	private Date lastLoginDt;
 

@@ -8,16 +8,20 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import kr.co.iwi.isso.app.auth.service.AuthService;
 import kr.co.iwi.isso.app.auth.vo.model.User;
 import kr.co.iwi.isso.app.auth.vo.request.SigninRequest;
+import kr.co.iwi.isso.app.auth.vo.request.TokenRequest;
 import kr.co.iwi.isso.app.auth.vo.response.SigninResponse;
+import kr.co.iwi.isso.app.auth.vo.response.TokenResponse;
 import kr.co.iwi.isso.common.Const;
 import kr.co.iwi.isso.common.vo.ResponseData;
 import kr.co.iwi.isso.exception.IException;
+import kr.co.iwi.isso.exception.TokenExpiredException;
 import kr.co.iwi.isso.exception.UnauthorizedException;
 import kr.co.iwi.isso.util.RequestUtil;
 import kr.co.iwi.isso.util.SecureUtil;
@@ -31,8 +35,8 @@ public class AuthController {
 	private AuthService authService;
 
 	@PostMapping("/signin")
-	public ResponseData<SigninResponse> signin(@Valid @RequestBody SigninRequest req, HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
+	public ResponseData<SigninResponse> signin(HttpServletRequest request, @Valid @RequestBody SigninRequest req)
+			throws Exception {
 
 		User user = authService.getUserInfo(req.getEmail());
 		if (user == null) {
@@ -62,94 +66,27 @@ public class AuthController {
 		String refToken = TokenUtil.createRefreshToken();
 
 		user.setRefToken(refToken);
-		user.setLastLoginIp(RequestUtil.getRemoteIp(request));
+		user.setRefIssueIp(String.valueOf(RequestUtil.getRemoteIp(request)));
+		user.setLastLoginIp(String.valueOf(RequestUtil.getRemoteIp(request)));
 
 		authService.setUserSignin(user);
-
-		response.addCookie(TokenUtil.makeCookie(Const.COOKIE_NAME_ACS, acsToken));
-		response.addCookie(TokenUtil.makeCookie(Const.COOKIE_NAME_REF, refToken));
-
-		request.setAttribute(Const.COOKIE_NAME_ACS, acsToken);
-		request.setAttribute(Const.COOKIE_NAME_REF, refToken);
 
 		return new ResponseData<>(new SigninResponse(acsToken, refToken));
 	}
 
-	// @PostMapping("/valid")
-	// public ResponseData<ValidResponse> valid(
-	// @CookieValue(required = false, name = Const.COOKIE_NAME_ACS) String acsToken,
-	// @CookieValue(required = false, name = Const.COOKIE_NAME_REF) String refToken, HttpServletResponse response)
-	// throws Exception {
-	//
-	// System.out.println("===== autchCheck =========================");
-	// System.out.println(acsToken);
-	// System.out.println(refToken);
-	// System.out.println("==========================================");
-	//
-	// boolean isEmptyAcsToken = StringUtils.isEmpty(acsToken);
-	// boolean isEmptyRefToken = StringUtils.isEmpty(refToken);
-	// boolean isExpiredAcsToken = true;
-	// boolean isExpiredRefToken = true;
-	//
-	// if (isEmptyAcsToken && isEmptyRefToken) {
-	// throw new IException("토큰 없음");
-	// }
-	//
-	// if (!isEmptyAcsToken) {
-	// isExpiredAcsToken = TokenUtil.isExpired(acsToken);
-	// }
-	//
-	// if (!isEmptyRefToken) {
-	// isExpiredRefToken = TokenUtil.isExpired(refToken);
-	// }
-	//
-	// if (isExpiredAcsToken && isExpiredRefToken) {
-	// throw new IException("인증 만료");
-	// }
-	//
-	// String email = null;
-	// if (isExpiredAcsToken) {
-	// // 엑세스 토큰 만료, 리프레시 토큰 검증
-	//
-	// if (isEmptyRefToken) {
-	// // 리프레시 토큰 누락
-	// throw new IException("인증 만료");
-	// }
-	//
-	// if (isExpiredRefToken) {
-	// // 리프레시 토큰 만료
-	// throw new IException("인증 만료");
-	// }
-	//
-	// User user = authService.getUserInfoByToken(refToken);
-	// if (user == null) {
-	// // 리프레시 토큰 검증 실패
-	// throw new IException("인증 실패");
-	// }
-	//
-	// email = user.getEmail();
-	// } else {
-	// // 엑세스 토큰 갱신
-	//
-	// email = TokenUtil.getSubject(acsToken);
-	// }
-	//
-	// if (StringUtils.isEmpty(email)) {
-	// throw new IException("인증 실패");
-	// }
-	//
-	// String newAcsToken = TokenUtil.createAccessToken(email);
-	// response.addCookie(TokenUtil.makeCookie(Const.COOKIE_NAME_ACS, newAcsToken));
-	//
-	// return new ResponseData<>(new ValidResponse(newAcsToken));
-	// }
+	@PostMapping("/token")
+	public ResponseData<TokenResponse> valid(HttpServletRequest request) throws Exception {
+		String email = String.valueOf(request.getAttribute(Const.TOKEN_EMAIL));
+		if (StringUtils.isEmpty(email)) {
+			throw new UnauthorizedException();
+		}
+
+		return new ResponseData<>(new TokenResponse(TokenUtil.createAccessToken(email)));
+	}
 
 	@PostMapping("/me")
 	public ResponseData<User> me(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-		String acsToken = (String) request.getAttribute(Const.COOKIE_NAME_ACS);
-
-		String email = TokenUtil.getSubject(acsToken);
+		String email = String.valueOf(request.getAttribute(Const.TOKEN_EMAIL));
 		if (StringUtils.isEmpty(email)) {
 			throw new UnauthorizedException();
 		}
