@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.co.iwi.isso.app.api.user.mapper.UserMapper">
+
+	<select id="selectUserList" resultType="User">
+		SELECT
+			USER_SEQ,
+			EMAIL,
+			USER_NO,
+			USER_NM,
+			USER_TEL,
+			USER_HP,
+			USER_FAX,
+			USER_BIRTH,
+			USER_SEX,
+			ENTRY_YMD,
+			QUIT_YMD,
+			POSI_CD,
+			FN_GET_POSI_NM(POSI_CD) AS POSI_NM,
+			DUTY_CD,
+			FN_GET_DUTY_NM(DUTY_CD) AS DUTY_NM,
+			DEPT_CD,
+			FN_GET_DEPT_NM(DEPT_CD) AS DEPT_NM,
+			USE_YN,
+			DEL_YN,
+			LAST_LOGIN_DT,
+			LAST_LOGIN_IP,
+			LOGIN_FAIL_CNT
+		FROM
+			TB_USER
+		ORDER BY
+			USER_SEQ DESC
+	</select>
+
+</mapper>

@@ -5,7 +5,7 @@ import java.security.MessageDigest;
 
 import org.apache.commons.lang3.StringUtils;
 
-import kr.co.iwi.isso.app.auth.vo.request.SigninRequest;
+import kr.co.iwi.isso.app.api.auth.vo.request.SigninRequest;
 
 public class SecureUtil {
 
